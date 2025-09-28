@@ -6,6 +6,7 @@ import { getCurrentUser } from './supabase';
 const FAVORITES_KEY = 'jara_favorites';
 const CHAT_KEY = 'jara_chat';
 const CHAT_DATE_KEY = 'jara_chat_date';
+const LIKES_KEY = 'jara_message_likes';
 
 // Favorites functionality
 export const addToFavorites = async (foodItem, diningHall, station) => {
@@ -289,5 +290,115 @@ export const deleteChatMessage = async (messageId) => {
   } catch (error) {
     console.error('Error deleting chat message:', error);
     return false;
+  }
+};
+
+// ============ LIKES FUNCTIONALITY ============
+
+// Get likes data for all messages
+export const getAllLikes = async () => {
+  try {
+    const likesData = await AsyncStorage.getItem(LIKES_KEY);
+    return likesData ? JSON.parse(likesData) : {};
+  } catch (error) {
+    console.error('Error getting likes data:', error);
+    return {};
+  }
+};
+
+// Get likes for a specific message
+export const getLikesForMessage = async (messageId) => {
+  try {
+    const allLikes = await getAllLikes();
+    return allLikes[messageId] || { count: 0, likedBy: [] };
+  } catch (error) {
+    console.error('Error getting likes for message:', error);
+    return { count: 0, likedBy: [] };
+  }
+};
+
+// Check if current user has liked a message
+export const hasUserLikedMessage = async (messageId) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return false;
+    
+    const messageLikes = await getLikesForMessage(messageId);
+    return messageLikes.likedBy.includes(user.id);
+  } catch (error) {
+    console.error('Error checking if user liked message:', error);
+    return false;
+  }
+};
+
+// Toggle like on a message
+export const toggleMessageLike = async (messageId) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const allLikes = await getAllLikes();
+    const messageLikes = allLikes[messageId] || { count: 0, likedBy: [] };
+    
+    const hasLiked = messageLikes.likedBy.includes(user.id);
+    
+    if (hasLiked) {
+      // Unlike the message
+      messageLikes.likedBy = messageLikes.likedBy.filter(id => id !== user.id);
+      messageLikes.count = Math.max(0, messageLikes.count - 1);
+    } else {
+      // Like the message
+      messageLikes.likedBy.push(user.id);
+      messageLikes.count += 1;
+    }
+    
+    allLikes[messageId] = messageLikes;
+    await AsyncStorage.setItem(LIKES_KEY, JSON.stringify(allLikes));
+    
+    return !hasLiked; // Return new like status
+  } catch (error) {
+    console.error('Error toggling message like:', error);
+    return false;
+  }
+};
+
+// Initialize mock likes for existing messages (call this when loading messages)
+export const initializeMockLikes = async (messages) => {
+  try {
+    const allLikes = await getAllLikes();
+    let updated = false;
+    
+    for (const message of messages) {
+      if (!allLikes[message.id]) {
+        // Generate mock likes for existing messages
+        const mockLikeCount = Math.floor(Math.random() * 8); // 0-7 likes
+        const mockLikedBy = [];
+        
+        // Add random users to likedBy array
+        const availableUsers = MOCK_USERS.slice();
+        for (let i = 0; i < mockLikeCount; i++) {
+          if (availableUsers.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableUsers.length);
+            const randomUser = availableUsers.splice(randomIndex, 1)[0];
+            mockLikedBy.push(randomUser.id);
+          }
+        }
+        
+        allLikes[message.id] = {
+          count: mockLikeCount,
+          likedBy: mockLikedBy
+        };
+        updated = true;
+      }
+    }
+    
+    if (updated) {
+      await AsyncStorage.setItem(LIKES_KEY, JSON.stringify(allLikes));
+    }
+    
+    return allLikes;
+  } catch (error) {
+    console.error('Error initializing mock likes:', error);
+    return {};
   }
 };

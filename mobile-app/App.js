@@ -18,7 +18,19 @@ import {
 
 import { AuthProvider, useAuth } from './AuthContext';
 import LoginScreen from './LoginScreen';
-import { getUserFavorites, toggleFavorite, isFavorite, getChatMessages, sendChatMessage, deleteChatMessage } from './socialFeatures';
+import { 
+  getUserFavorites, 
+  toggleFavorite, 
+  isFavorite, 
+  getChatMessages, 
+  sendChatMessage, 
+  deleteChatMessage,
+  toggleMessageLike,
+  getLikesForMessage,
+  hasUserLikedMessage,
+  initializeMockLikes
+} from './socialFeatures';
+import { getCurrentUser } from './supabase';
 import realMenuData from './menu_data.json';
 
 
@@ -274,6 +286,9 @@ function MainApp() {
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  // Likes-related states
+  const [likesData, setLikesData] = useState({});
+  const [userLikes, setUserLikes] = useState(new Set());
   // Loaded menu data (from scraped JSON)
   const [menuData, setMenuData] = useState(realMenuData);
   // Whether the menu is currently refreshing
@@ -349,6 +364,22 @@ function MainApp() {
       setChatLoading(true);
       const messages = await getChatMessages();
       setChatMessages(messages);
+      
+      // Initialize mock likes for messages and load likes data
+      const likes = await initializeMockLikes(messages);
+      setLikesData(likes);
+      
+      // Load user's likes
+      const user = await getCurrentUser();
+      if (user) {
+        const userLikedMessages = new Set();
+        Object.keys(likes).forEach(messageId => {
+          if (likes[messageId].likedBy.includes(user.id)) {
+            userLikedMessages.add(messageId);
+          }
+        });
+        setUserLikes(userLikedMessages);
+      }
     } catch (error) {
       console.error('Error loading chat messages:', error);
     } finally {
@@ -378,6 +409,43 @@ function MainApp() {
       await loadChatMessages(); // Refresh messages
     } catch (error) {
       console.error('Error deleting message:', error);
+    }
+  };
+
+  const handleToggleLike = async (messageId) => {
+    try {
+      const newLikeStatus = await toggleMessageLike(messageId);
+      
+      // Update local likes data
+      const updatedLikesData = { ...likesData };
+      const currentLikes = updatedLikesData[messageId] || { count: 0, likedBy: [] };
+      
+      const user = await getCurrentUser();
+      if (user) {
+        if (newLikeStatus) {
+          // User liked the message
+          currentLikes.count += 1;
+          if (!currentLikes.likedBy.includes(user.id)) {
+            currentLikes.likedBy.push(user.id);
+          }
+          setUserLikes(prev => new Set([...prev, messageId]));
+        } else {
+          // User unliked the message
+          currentLikes.count = Math.max(0, currentLikes.count - 1);
+          currentLikes.likedBy = currentLikes.likedBy.filter(id => id !== user.id);
+          setUserLikes(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(messageId);
+            return newSet;
+          });
+        }
+        
+        updatedLikesData[messageId] = currentLikes;
+        setLikesData(updatedLikesData);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      Alert.alert('Error', 'Failed to update like');
     }
   };
 
@@ -754,6 +822,23 @@ function MainApp() {
               ]}>
                 {message.message}
               </Text>
+              
+              {/* Like button and count */}
+              <View style={styles.messageActions}>
+                <TouchableOpacity 
+                  style={styles.likeButton}
+                  onPress={() => handleToggleLike(message.id)}
+                >
+                  <Text style={[
+                    styles.likeButtonText, 
+                    userLikes.has(message.id) ? styles.likeButtonActive : styles.likeButtonInactive,
+                    message.isCurrentUser ? { color: '#fff' } : {}
+                  ]}>
+                    {userLikes.has(message.id) ? '❤️' : '🤍'} {likesData[message.id]?.count || 0}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
               {message.isCurrentUser && (
                 <TouchableOpacity 
                   style={styles.deleteMessageButton}
@@ -1599,6 +1684,27 @@ const styles = StyleSheet.create({
   },
   deleteMessageText: {
     fontSize: 12,
+    opacity: 0.7,
+  },
+  messageActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  likeButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  likeButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  likeButtonActive: {
+    opacity: 1,
+  },
+  likeButtonInactive: {
     opacity: 0.7,
   },
   messageInputContainer: {
