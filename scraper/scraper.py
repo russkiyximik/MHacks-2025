@@ -11,6 +11,9 @@ import re
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Dict
 import time
+# import schedule  # Uncomment for scheduling functionality
+# import datetime
+# import pytz
 
 @dataclass
 class NutritionInfo:
@@ -342,6 +345,41 @@ def main():
     print(f"✅ Found {mobile_data['summary']['total_items']} total menu items")
     print(f"✅ {mobile_data['summary']['nutrition_coverage']} have detailed nutrition data")
     print(f"✅ Ready for mobile app integration")
+
+# COMMENTED OUT SCHEDULING FUNCTIONALITY
+# Uncomment the imports at the top and this section to enable daily scheduling
+"""
+def scheduled_scrape():
+    '''Run the scraper automatically at scheduled time'''
+    print(f"🕕 Scheduled scrape started at {datetime.datetime.now()}")
+    main()
+    print(f"🕕 Scheduled scrape completed at {datetime.datetime.now()}")
+
+def setup_scheduler():
+    '''Setup the scheduler to run scraper daily at 6 AM EST'''
+    # Convert 6 AM EST to local time if needed
+    eastern = pytz.timezone('US/Eastern')
+    
+    # Schedule the scraper to run daily at 6 AM EST
+    schedule.every().day.at("06:00").do(scheduled_scrape)
+    
+    print("📅 Scheduler setup complete - scraper will run daily at 6:00 AM EST")
+    print("🔄 Running scheduler loop... Press Ctrl+C to stop")
+    
+    try:
+        while True:
+            # Check if any scheduled tasks are ready to run
+            schedule.run_pending()
+            time.sleep(60)  # Check every minute
+    except KeyboardInterrupt:
+        print("\n⏹️  Scheduler stopped by user")
+
+# To enable scheduling:
+# 1. Uncomment the imports at the top: schedule, datetime, pytz
+# 2. Uncomment this entire section
+# 3. Install required packages: pip install schedule pytz
+# 4. Replace the main() call below with: setup_scheduler()
+"""
 
 if __name__ == "__main__":
     main()
