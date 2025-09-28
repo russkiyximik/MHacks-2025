@@ -8,7 +8,7 @@ export const isUMichEmail = (email) => {
 };
 
 // Mock user storage key
-const MOCK_USER_KEY = 'jara_user';
+const MOCK_USER_KEY = 'michigan_eaters_user';
 
 // Standalone authentication functions for demo
 export const signInWithEmail = async (email) => {

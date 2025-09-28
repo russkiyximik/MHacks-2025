@@ -1,2 +1,2 @@
-# Jara2
+# Michigan Eaters
 MHacks Project

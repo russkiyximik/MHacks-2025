@@ -63,7 +63,7 @@ export default function LoginScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome to Jara</Text>
+            <Text style={styles.title}>Welcome to Michigan Eaters</Text>
             <Text style={styles.subtitle}>University of Michigan Dining Tracker</Text>
           </View>
 

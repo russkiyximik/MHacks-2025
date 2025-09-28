@@ -3,10 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCurrentUser } from './supabase';
 
 // Storage keys
-const FAVORITES_KEY = 'jara_favorites';
-const CHAT_KEY = 'jara_chat';
-const CHAT_DATE_KEY = 'jara_chat_date';
-const LIKES_KEY = 'jara_message_likes';
+const FAVORITES_KEY = 'michigan_eaters_favorites';
+const CHAT_KEY = 'michigan_eaters_chat';
+const CHAT_DATE_KEY = 'michigan_eaters_chat_date';
+const LIKES_KEY = 'michigan_eaters_message_likes';
 
 // Favorites functionality
 export const addToFavorites = async (foodItem, diningHall, station) => {

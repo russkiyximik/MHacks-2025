@@ -883,7 +883,7 @@ function MainApp() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>UMacros</Text>
+            <Text style={styles.headerTitle}>Michigan Eaters</Text>
             <Text style={styles.headerSubtitle}>UM Dining Tracker</Text>
           </View>
           <View style={styles.headerRight}>
