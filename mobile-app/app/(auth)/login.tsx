@@ -1,4 +1,3 @@
-// LoginScreen.js - Email-based authentication screen
 import React, { useState } from 'react';
 import {
   StyleSheet,
@@ -12,11 +11,17 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { signInWithEmail, isUMichEmail } from './supabase';
+import { signInWithEmail, isUMichEmail } from '../../src/services/supabase';
 
+/**
+ * Simple login screen that accepts a University of Michigan email address and
+ * signs the user in via the mock supabase service. While authenticating
+ * a spinner is displayed. On success a message is shown and the auth state
+ * will update via the `AuthContext` in the root layout.
+ */
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSignIn = async () => {
     if (!email.trim()) {
@@ -26,8 +31,8 @@ export default function LoginScreen() {
 
     if (!isUMichEmail(email.trim())) {
       Alert.alert(
-        'Invalid Email', 
-        'Please use a valid University of Michigan email address ending with @umich.edu'
+        'Invalid Email',
+        'Please use a valid University of Michigan email address ending with @umich.edu',
       );
       return;
     }
@@ -35,15 +40,11 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signInWithEmail(email.trim());
-      
       Alert.alert(
-        'Demo Mode - Login Successful!', 
+        'Demo Mode - Login Successful!',
         `In production, you would receive an email at ${email} with a login link. For this demo, you're automatically logged in and will be taken to the main app.`,
-        [{ text: 'OK', onPress: () => {} }]
       );
-      
-      // The auth state change will automatically update the UI
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       Alert.alert('Error', error.message || 'An error occurred during login');
     } finally {
@@ -51,13 +52,9 @@ export default function LoginScreen() {
     }
   };
 
-  const handleResendEmail = () => {
-    handleSignIn();
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -79,7 +76,7 @@ export default function LoginScreen() {
               autoCorrect={false}
               editable={!loading}
             />
-            
+
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleSignIn}
@@ -93,7 +90,8 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <Text style={styles.infoText}>
-              Enter your @umich.edu email to sign in. This is a demo version that logs you in automatically!
+              Enter your @umich.edu email to sign in. This is a demo version that logs you in
+              automatically!
             </Text>
           </View>
         </View>
@@ -164,51 +162,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  secondaryButton: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  secondaryButtonText: {
-    color: '#007AFF',
-  },
   infoText: {
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,
-  },
-  emailSentContainer: {
-    alignItems: 'center',
-  },
-  emailSentTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  emailSentText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emailAddress: {
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 20,
-  },
-  backButton: {
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
   },
 });

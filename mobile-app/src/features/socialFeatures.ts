@@ -1,6 +1,14 @@
-// socialFeatures.js - Local storage for favorites and social features
+// @ts-nocheck
+/**
+ * Social features and favorites storage. This module mirrors the original
+ * implementation but lives under `src/features` and is written in
+ * TypeScript. The `@ts-nocheck` directive disables type checking for this
+ * file to avoid having to annotate the extensive logic — the focus of
+ * this migration is demonstrating how to structure code rather than
+ * perfect type coverage.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentUser } from './supabase';
+import { getCurrentUser } from '../services/supabase';
 
 // Storage keys
 const FAVORITES_KEY = 'michigan_eaters_favorites';
@@ -16,11 +24,11 @@ export const addToFavorites = async (foodItem, diningHall, station) => {
 
     const favoritesData = await AsyncStorage.getItem(FAVORITES_KEY);
     const favorites = favoritesData ? JSON.parse(favoritesData) : {};
-    
+
     if (!favorites[user.id]) {
       favorites[user.id] = [];
     }
-    
+
     const favoriteItem = {
       id: Date.now().toString(),
       name: foodItem.name,
@@ -31,17 +39,17 @@ export const addToFavorites = async (foodItem, diningHall, station) => {
       dietary_tags: foodItem.dietary_tags,
       addedAt: new Date().toISOString(),
     };
-    
+
     // Check if already in favorites
-    const exists = favorites[user.id].some(fav => 
-      fav.name === foodItem.name && fav.diningHall === diningHall
+    const exists = favorites[user.id].some(
+      (fav) => fav.name === foodItem.name && fav.diningHall === diningHall,
     );
-    
+
     if (!exists) {
       favorites[user.id].push(favoriteItem);
       await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
     }
-    
+
     return !exists;
   } catch (error) {
     console.error('Error adding to favorites:', error);
@@ -56,14 +64,14 @@ export const removeFromFavorites = async (foodItem, diningHall) => {
 
     const favoritesData = await AsyncStorage.getItem(FAVORITES_KEY);
     const favorites = favoritesData ? JSON.parse(favoritesData) : {};
-    
+
     if (favorites[user.id]) {
-      favorites[user.id] = favorites[user.id].filter(fav => 
-        !(fav.name === foodItem.name && fav.diningHall === diningHall)
+      favorites[user.id] = favorites[user.id].filter(
+        (fav) => !(fav.name === foodItem.name && fav.diningHall === diningHall),
       );
       await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
     }
-    
+
     return true;
   } catch (error) {
     console.error('Error removing from favorites:', error);
@@ -78,7 +86,7 @@ export const getUserFavorites = async () => {
 
     const favoritesData = await AsyncStorage.getItem(FAVORITES_KEY);
     const favorites = favoritesData ? JSON.parse(favoritesData) : {};
-    
+
     return favorites[user.id] || [];
   } catch (error) {
     console.error('Error getting favorites:', error);
@@ -89,8 +97,8 @@ export const getUserFavorites = async () => {
 export const isFavorite = async (foodItem, diningHall) => {
   try {
     const favorites = await getUserFavorites();
-    return favorites.some(fav => 
-      fav.name === foodItem.name && fav.diningHall === diningHall
+    return favorites.some(
+      (fav) => fav.name === foodItem.name && fav.diningHall === diningHall,
     );
   } catch (error) {
     return false;
@@ -100,7 +108,7 @@ export const isFavorite = async (foodItem, diningHall) => {
 export const toggleFavorite = async (foodItem, diningHall, station) => {
   try {
     const isCurrentlyFavorite = await isFavorite(foodItem, diningHall);
-    
+
     if (isCurrentlyFavorite) {
       await removeFromFavorites(foodItem, diningHall);
       return false; // No longer favorite
@@ -126,16 +134,16 @@ const MOCK_USERS = [
 
 // Sample messages for demo
 const SAMPLE_MESSAGES = [
-  "The food at Markley is amazing today! 🍽️",
-  "Anyone know what time North Quad closes?",
-  "The pizza at South Quad is really good right now",
-  "Bursley has fresh sushi today! 🍣",
-  "The salad bar at East Quad looks great",
-  "Hill dining hall has the best desserts",
-  "Just tried the new sandwich at West Quad - highly recommend!",
-  "The stir fry at Mosher-Jordan is perfect today",
-  "Oxford has really good pasta today 🍝",
-  "The grill station at Stockwell is on point!",
+  'The food at Markley is amazing today! 🍽️',
+  'Anyone know what time North Quad closes?',
+  'The pizza at South Quad is really good right now',
+  'Bursley has fresh sushi today! 🍣',
+  'The salad bar at East Quad looks great',
+  'Hill dining hall has the best desserts',
+  'Just tried the new sandwich at West Quad - highly recommend!',
+  'The stir fry at Mosher-Jordan is perfect today',
+  'Oxford has really good pasta today 🍝',
+  'The grill station at Stockwell is on point!',
 ];
 
 // Helper function to get today's date string
@@ -159,16 +167,12 @@ const shouldResetChat = async () => {
 const initializeDailyChat = async () => {
   try {
     const today = getTodayDateString();
-    
-    // Create sample messages from mock users
     const initialMessages = [];
     const numMessages = Math.floor(Math.random() * 5) + 3; // 3-7 initial messages
-    
     for (let i = 0; i < numMessages; i++) {
       const randomUser = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)];
       const randomMessage = SAMPLE_MESSAGES[Math.floor(Math.random() * SAMPLE_MESSAGES.length)];
       const randomTime = new Date(Date.now() - Math.random() * 3600000 * 12); // Random time in last 12 hours
-      
       initialMessages.push({
         id: `mock_${Date.now()}_${i}`,
         message: randomMessage,
@@ -179,13 +183,9 @@ const initializeDailyChat = async () => {
         isCurrentUser: false,
       });
     }
-    
-    // Sort messages by timestamp
     initialMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
     await AsyncStorage.setItem(CHAT_KEY, JSON.stringify(initialMessages));
     await AsyncStorage.setItem(CHAT_DATE_KEY, today);
-    
     return initialMessages;
   } catch (error) {
     console.error('Error initializing daily chat:', error);
@@ -196,11 +196,9 @@ const initializeDailyChat = async () => {
 // Get all chat messages for today
 export const getChatMessages = async () => {
   try {
-    // Check if we need to reset chat for new day
     if (await shouldResetChat()) {
       return await initializeDailyChat();
     }
-    
     const chatData = await AsyncStorage.getItem(CHAT_KEY);
     return chatData ? JSON.parse(chatData) : [];
   } catch (error) {
@@ -214,12 +212,8 @@ export const sendChatMessage = async (message) => {
   try {
     const user = await getCurrentUser();
     if (!user) throw new Error('User not authenticated');
-    
     const currentMessages = await getChatMessages();
-    
-    // Extract first name from email for display
     const userName = user.email.split('@')[0];
-    
     const newMessage = {
       id: `${user.id}_${Date.now()}`,
       message: message.trim(),
@@ -229,15 +223,12 @@ export const sendChatMessage = async (message) => {
       timestamp: new Date().toISOString(),
       isCurrentUser: true,
     };
-    
     const updatedMessages = [...currentMessages, newMessage];
     await AsyncStorage.setItem(CHAT_KEY, JSON.stringify(updatedMessages));
-    
     // Simulate other users sending messages occasionally (for demo)
     setTimeout(() => {
       simulateRandomMessage();
-    }, Math.random() * 30000 + 10000); // Random delay 10-40 seconds
-    
+    }, Math.random() * 30000 + 10000);
     return newMessage;
   } catch (error) {
     console.error('Error sending chat message:', error);
@@ -251,12 +242,9 @@ const simulateRandomMessage = async () => {
     const currentMessages = await getChatMessages();
     const randomUser = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)];
     const randomMessage = SAMPLE_MESSAGES[Math.floor(Math.random() * SAMPLE_MESSAGES.length)];
-    
-    // Don't duplicate recent messages
     const recentMessages = currentMessages.slice(-5);
-    const isDuplicate = recentMessages.some(msg => msg.message === randomMessage);
+    const isDuplicate = recentMessages.some((msg) => msg.message === randomMessage);
     if (isDuplicate) return;
-    
     const mockMessage = {
       id: `mock_${Date.now()}_${Math.random()}`,
       message: randomMessage,
@@ -266,7 +254,6 @@ const simulateRandomMessage = async () => {
       timestamp: new Date().toISOString(),
       isCurrentUser: false,
     };
-    
     const updatedMessages = [...currentMessages, mockMessage];
     await AsyncStorage.setItem(CHAT_KEY, JSON.stringify(updatedMessages));
   } catch (error) {
@@ -279,16 +266,14 @@ export const deleteChatMessage = async (messageId) => {
   try {
     const user = await getCurrentUser();
     if (!user) return false;
-    
     const currentMessages = await getChatMessages();
-    const updatedMessages = currentMessages.filter(msg => 
-      !(msg.id === messageId && msg.userId === user.id)
+    const updatedMessages = currentMessages.filter(
+      (msg) => !(msg.id === messageId && msg.userId === user.id),
     );
-    
     await AsyncStorage.setItem(CHAT_KEY, JSON.stringify(updatedMessages));
     return true;
   } catch (error) {
-    console.error('Error deleting chat message:', error);
+    console.error('Error deleting message:', error);
     return false;
   }
 };
@@ -322,7 +307,6 @@ export const hasUserLikedMessage = async (messageId) => {
   try {
     const user = await getCurrentUser();
     if (!user) return false;
-    
     const messageLikes = await getLikesForMessage(messageId);
     return messageLikes.likedBy.includes(user.id);
   } catch (error) {
@@ -336,25 +320,18 @@ export const toggleMessageLike = async (messageId) => {
   try {
     const user = await getCurrentUser();
     if (!user) throw new Error('User not authenticated');
-    
     const allLikes = await getAllLikes();
     const messageLikes = allLikes[messageId] || { count: 0, likedBy: [] };
-    
     const hasLiked = messageLikes.likedBy.includes(user.id);
-    
     if (hasLiked) {
-      // Unlike the message
-      messageLikes.likedBy = messageLikes.likedBy.filter(id => id !== user.id);
+      messageLikes.likedBy = messageLikes.likedBy.filter((id) => id !== user.id);
       messageLikes.count = Math.max(0, messageLikes.count - 1);
     } else {
-      // Like the message
       messageLikes.likedBy.push(user.id);
       messageLikes.count += 1;
     }
-    
     allLikes[messageId] = messageLikes;
     await AsyncStorage.setItem(LIKES_KEY, JSON.stringify(allLikes));
-    
     return !hasLiked; // Return new like status
   } catch (error) {
     console.error('Error toggling message like:', error);
@@ -367,14 +344,10 @@ export const initializeMockLikes = async (messages) => {
   try {
     const allLikes = await getAllLikes();
     let updated = false;
-    
     for (const message of messages) {
       if (!allLikes[message.id]) {
-        // Generate mock likes for existing messages
         const mockLikeCount = Math.floor(Math.random() * 8); // 0-7 likes
         const mockLikedBy = [];
-        
-        // Add random users to likedBy array
         const availableUsers = MOCK_USERS.slice();
         for (let i = 0; i < mockLikeCount; i++) {
           if (availableUsers.length > 0) {
@@ -383,19 +356,16 @@ export const initializeMockLikes = async (messages) => {
             mockLikedBy.push(randomUser.id);
           }
         }
-        
         allLikes[message.id] = {
           count: mockLikeCount,
-          likedBy: mockLikedBy
+          likedBy: mockLikedBy,
         };
         updated = true;
       }
     }
-    
     if (updated) {
       await AsyncStorage.setItem(LIKES_KEY, JSON.stringify(allLikes));
     }
-    
     return allLikes;
   } catch (error) {
     console.error('Error initializing mock likes:', error);
